@@ -2,6 +2,7 @@
 #define FRACTALWIDGET_H
 
 #include <QMainWindow>
+// #include "complexnumber.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -20,4 +21,5 @@ public:
 private:
     Ui::FractalWidget *ui;
 };
+
 #endif // FRACTALWIDGET_H
