@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QPaintEvent>
 #include <QPainter>
+#include <QPolygonF>
 #include "complexnumber.h"
 
 QT_BEGIN_NAMESPACE
@@ -27,6 +28,10 @@ protected:
     void renderImage();
 
     void paintEvent(QPaintEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
 
 private:
     Ui::FractalWidget *ui;
@@ -35,6 +40,11 @@ private:
 
     double xmin_ = -2.0, xmax_ = 0.5;
     double ymin_ = -1.25, ymax_ = 1.25;
+
+    bool reset_ = true;
+    bool selected_ = false;
+
+    QPointF start_, end_;
 };
 
 #endif // FRACTALWIDGET_H
