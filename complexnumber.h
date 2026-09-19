@@ -9,13 +9,15 @@ public:
     ComplexNumber();
     ComplexNumber(const double& a, const double& b);
 
-    ComplexNumber square();
-    double radius();
+    ComplexNumber square() const;
+    double radius() const;
 
     friend ComplexNumber operator+(const ComplexNumber& lhs, const ComplexNumber& rhs);
     friend ComplexNumber operator*(const ComplexNumber& lhs, const ComplexNumber& rhs);
 
-protected:
+    double real() const;
+    double imag() const;
+
 private:
     double x_;
     double y_;
