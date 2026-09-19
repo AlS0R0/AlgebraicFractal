@@ -13,9 +13,8 @@ FractalWidget::~FractalWidget()
     delete ui;
 }
 
-QRgb getColor(const ComplexNumber& c, const double& border)
+QRgb getColor(const ComplexNumber& c, const double& border, int maxIter)
 {
-    const int maxIter = 300;
     ComplexNumber res_num;
     int iter = 0;
 
@@ -55,45 +54,20 @@ void FractalWidget::renderImage()
         for (int px = 0; px < width(); ++px) {
             ComplexNumber c = pixelToComplNum(px, py);
 
-            line[px] = getColor(c, border_);
+            line[px] = getColor(c, border_, maxIter_);
         }
     }
 }
 
-// void FractalWidget::renderImage()
-// {
-//     image_ = QImage(size(), QImage::Format_RGB32);
-
-//     const int SS = 2;
-//     const double inv = 1.0 / (SS * SS);
-
-//     for (int py = 0; py < height(); ++py) {
-//         QRgb *line = reinterpret_cast<QRgb *>(image_.scanLine(py));
-
-//         for (int px = 0; px < width(); ++px) {
-//             int r = 0, g = 0, b = 0;
-
-//             for (int sy = 0; sy < SS; ++sy) {
-//                 for (int sx = 0; sx < SS; ++sx) {
-//                     double fx = px + (sx + 0.5) / SS;
-//                     double fy = py + (sy + 0.5) / SS;
-
-//                     ComplexNumber c = pixelToComplNum(fx, fy);
-//                     QRgb col = getColor(c, border_);
-
-//                     r += qRed(col);
-//                     g += qGreen(col);
-//                     b += qBlue(col);
-//                 }
-//             }
-
-//             line[px] = qRgb(int(r * inv), int(g * inv), int(b * inv));
-//         }
-//     }
-// }
-
 void FractalWidget::paintEvent(QPaintEvent* event)
 {
+    if (!viewInitialized_) {
+        setView(-0.5, 0.0, 3.5 / std::max(1, width()));
+
+        viewInitialized_ = true;
+        reset_ = true;
+    }
+
     if (reset_ || image_.size() != size()) {
         renderImage();
         reset_ = false;
@@ -114,6 +88,13 @@ void FractalWidget::paintEvent(QPaintEvent* event)
 
 void FractalWidget::resizeEvent(QResizeEvent* event)
 {
+    if (!viewInitialized_) return;
+
+    double upp = (xmax_ - xmin_) / std::max(1, event->oldSize().width());
+    double cx = (xmin_ + xmax_) * 0.5;
+    double cy = (ymin_ + ymax_) * 0.5;
+
+    setView(cx, cy, upp);
     reset_ = true;
 }
 
@@ -125,9 +106,9 @@ void FractalWidget::mousePressEvent(QMouseEvent* event)
         start_ = end_ = event->pos();
     } else if (event->button() == Qt::RightButton) {
 
-        xmin_ = -2.0;  xmax_ = 0.5;
-        ymin_ = -1.25; ymax_ = 1.25;
+        setView(-0.5, 0.0, 3.5 / std::max(1, width()));
 
+        maxIter_ = 100;
         reset_ = true;
     }
 
@@ -145,24 +126,44 @@ void FractalWidget::mouseMoveEvent(QMouseEvent* event)
 void FractalWidget::mouseReleaseEvent(QMouseEvent* event)
 {
     if (event->button() != Qt::LeftButton || !selected_) return;
-
     selected_ = false;
 
-    QRectF sel_rect = QRectF(start_,end_).normalized();
+    QRectF sel = QRectF(start_, end_).normalized();
 
-    if (sel_rect.width() < 5 || sel_rect.height() < 5) {
+    if (sel.width() < 5 || sel.height() < 5) {
         update();
         return;
     }
 
-    ComplexNumber topLeft = pixelToComplNum(sel_rect.left(),  sel_rect.top());
-    ComplexNumber bottomRight = pixelToComplNum(sel_rect.right(), sel_rect.bottom());
+    ComplexNumber topLeft = pixelToComplNum(sel.left(),  sel.top());
+    ComplexNumber bottomRight = pixelToComplNum(sel.right(), sel.bottom());
 
-    xmin_ = topLeft.real();
-    xmax_ = bottomRight.real();
-    ymax_ = topLeft.imag();
-    ymin_ = bottomRight.imag();
+    double selWc = bottomRight.real() - topLeft.real();
+    double selHc = topLeft.imag() - bottomRight.imag();
+
+    double uppX = selWc / width();
+    double uppY = selHc / height();
+
+    double upp = std::max(uppX, uppY);
+
+    double cx = (topLeft.real() + bottomRight.real()) * 0.5;
+    double cy = (topLeft.imag() + bottomRight.imag()) * 0.5;
+
+    setView(cx, cy, upp);
+    double baseUpp = 3.5 / 800.0;
+    maxIter_ = std::min(1000, int(300 * std::sqrt(baseUpp / upp)));
 
     reset_ = true;
     update();
+}
+
+void FractalWidget::setView(double cx, double cy, double unitsPerPixel)
+{
+    double halfW = width()  * 0.5 * unitsPerPixel;
+    double halfH = height() * 0.5 * unitsPerPixel;
+
+    xmin_ = cx - halfW;
+    xmax_ = cx + halfW;
+    ymin_ = cy - halfH;
+    ymax_ = cy + halfH;
 }

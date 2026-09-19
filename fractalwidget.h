@@ -21,7 +21,7 @@ public:
     explicit FractalWidget(QWidget *parent = nullptr);
     ~FractalWidget() override;
 
-    friend QRgb getColor(ComplexNumber arg, const double& border);
+    friend QRgb getColor(ComplexNumber arg, const double& border, int maxIter);
 
 protected:
     ComplexNumber pixelToComplNum(const double& px, const double& py);
@@ -37,14 +37,18 @@ private:
     Ui::FractalWidget *ui;
     QImage image_;
     double border_ = 4.0;
+    int maxIter_ = 100;
 
     double xmin_ = -2.0, xmax_ = 0.5;
     double ymin_ = -1.25, ymax_ = 1.25;
 
     bool reset_ = true;
     bool selected_ = false;
+    bool viewInitialized_ = false;
 
     QPointF start_, end_;
+
+    void setView(double cx, double cy, double unitsPerPixel);
 };
 
 #endif // FRACTALWIDGET_H
